@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>医療問題生成サイト「発熱」</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        .button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+            text-align: left;
+        }
+        .hidden {
+            color: #000;
+            background-color: black;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>医療問題生成サイト「胸痛」</h1>
+
+    <button class="button" onclick="generateProblem()">問題</button>
+    <button class="button" onclick="showInterviewPoints()">医療面接</button>
+    <button class="button" onclick="revealAnswer()">解答を表示</button>
+
+    <div class="result" id="result"></div>
+
+    <script>
+        // 出題範囲
+        const topics = {
+            "急性冠症候群": {
+                "疫学": "中高年に発症し、男性に多い",
+                "胸痛": "圧迫感、絞扼感、不快感、（ある場合）20分以上、放散痛（顎、喉、頚、肩、腕、心窩部、背部）",
+                "発汗（冷汗）（24%〜61%）": "",
+                "悪心（24〜56%）)": "",
+                "呼吸困難（36〜49%）": "",
+                "全身倦怠感": "",
+                "失神・前失神": "",
+                "リスク因子": "高血圧（30〜60%）、糖尿病（14〜26%）、腎機能障害、高コレステロール血症（30%）、喫煙歴（32〜38%）、既往歴、家族歴（24%）"
+            },
+            "肺炎（特に市中肺炎）": {
+                "疫学": "96%以上が65歳以上の高齢者",
+                "咳嗽（91%）、喀痰（66%）": "",
+                "呼吸困難（63%）": "",
+                "胸痛（49%）": "",
+                "発熱（61%）、全身倦怠感、食欲不振": "",
+                "既往歴など": "喫煙歴、免疫不全、脳梗塞の既往、寝たきり、脾摘後、鳥類飼育歴、温泉、循環式浴槽、加湿器など、sick contact"
+            },
+            "急性肺血栓塞栓症": {
+                "疫学": "男女比2:3、60〜70歳に好発",
+                "病歴": "長時間同じ姿勢後、起立や歩行の開始時",
+                "突然の呼吸困難（80%）": "",
+                "咳嗽、血痰（6%）": "",
+                "胸痛（49%）": "",
+                "失神（24%）": "",
+                "動悸": "",
+                "発熱（5%）": "",
+                "下肢腫脹（30%）": "",
+                "既往歴": "DVT、悪性腫瘍（11%）、COPD、術後、入院中、妊娠中",
+                "服薬歴": "経口避妊薬"
+            },
+            "自然気胸": {
+                "疫学": "20歳代や60歳代に多い、男女比7〜10:1",
+                "病歴": "突然発症、安静時に起きることが多い",
+                "胸痛（88%）": "",
+                "咳嗽": "",
+                "呼吸困難（27%）": "",
+                "既往歴など": "喫煙（51%）、呼吸器疾患、月経開始日付近の発症"
+            },
+            "緊張性気胸": {
+                "病歴": "突然発症",
+                "ショック": "",
+                "呼吸困難": "",
+                "胸痛": ""
+            },
+            "大動脈解離": {
+                "疫学": "50〜70歳代男性に多い",
+                "痛み": "突然発症（85%）、非常に強いまたは人生最悪の痛み（91%）、鋭い（64%）・裂ける（51%）・移動する（17%）、胸部（73%）・腰背部痛（53%）・腹部（30%）",
+                "呼吸困難": "",
+                "失神（9%）、麻痺、意識障害": "",
+                "ショック": "",
+                "既往歴など": "高血圧（72%）、大動脈二尖弁、手術後、Marfan症候群、Ehlers-Danlos症候群、Turner症候群、外傷、睡眠障害、家族歴"
+            },
+            "食道癌": {
+                "疫学": "60〜70歳代以降に多い、男女比5.4:1",
+                "病歴": "慢性経過で進行するが、突然発症を認めたり、しばしば検診時に見つかる",
+                "固形物の嚥下障害・つかえ感（74%）": "",
+                "体重減少（57%）": "",
+                "胸焼け（21%）": "",
+                "嚥下痛（17%）": "",
+                "息切れ（12%）": "",
+                "慢性咳嗽（11%）": "",
+                "嗄声（6%）": "",
+                "吐血（6%）": "",
+                "片側眼瞼下垂・発汗減少": "",
+                "血痰・喀血（4%）": "",
+                "生活歴": "喫煙、飲酒、熱い食事",
+                "既往歴": "Barrett食道、食道アカラシア"
+            }
+        };
+
+        let currentTopic = null;
+
+        // ランダムに疾患を選んで医療面接のポイントを表示する
+        function generateProblem() {
+            const keys = Object.keys(topics);
+            currentTopic = keys[Math.floor(Math.random() * keys.length)];
+            document.getElementById("result").innerHTML = "疾患が選択されました。医療面接のポイントを表示するには、「医療面接」ボタンを押してください。";
+        }
+
+        // 医療面接のポイントを表示する
+        function showInterviewPoints() {
+            if (currentTopic === null) {
+                alert("まず問題を生成してください。");
+                return;
+            }
+
+            const selectedPoints = topics[currentTopic];
+            let points = "疾患のポイントは以下の通りです。:<br><br>";
+            for (let [key, value] of Object.entries(selectedPoints)) {
+                points += `・${key}: ${value}<br>`;
+            }
+            document.getElementById("result").innerHTML = `${points}`;
+        }
+
+        // 解答ボタンの処理
+        function revealAnswer() {
+            if (currentTopic === null) {
+                alert("まず問題を生成してください。");
+                return;
+            }
+            document.getElementById("result").innerHTML = `出題された疾患は： ${currentTopic}`;
+        }
+    </script>
+
+</body>
+</html>
